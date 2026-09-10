@@ -58,6 +58,24 @@ export async function PUT(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+    const body = await request.json();
+    const { id, is_available } = body;
+
+    await pool.query("UPDATE menu_items SET is_available=? WHERE id=?", [is_available !== false, id]);
+
+    return NextResponse.json({ message: "Menu item availability updated" });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to update menu item";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const user = await getUserFromRequest(request);

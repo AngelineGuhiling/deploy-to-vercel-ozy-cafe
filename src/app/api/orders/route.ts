@@ -27,14 +27,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { customer_name, items, payment_method, order_type, pickup_time, created_by, promo_code, discount } = body;
+    const { customer_name, items, payment_method, order_type, created_by, promo_code, discount, payment_ref, delivery_address, customer_phone } = body;
 
     const subtotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
     const total = Math.max(0, subtotal - (Number(discount) || 0));
 
     const [orderResult] = await pool.query(
-      "INSERT INTO orders (customer_name, total, payment_method, order_type, pickup_time, created_by) VALUES (?, ?, ?, ?, ?, ?)",
-      [customer_name || "Walk-in", total, payment_method || "cash", order_type || "dine-in", pickup_time || null, created_by || null]
+      "INSERT INTO orders (customer_name, total, payment_method, order_type, delivery_address, customer_phone, created_by, payment_ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [customer_name || "Walk-in", total, payment_method || "cash", order_type || "dine-in", delivery_address || null, customer_phone || null, created_by || null, payment_ref || null]
     );
 
     const orderId = (orderResult as { insertId: number }).insertId;
@@ -71,8 +71,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
     const body = await request.json();
-    const { id, status } = body;
-    await pool.query("UPDATE orders SET status=? WHERE id=?", [status, id]);
+    const { id, status, delivery_status } = body;
+    const updateQuery = delivery_status ? "UPDATE orders SET delivery_status=? WHERE id=?" : "UPDATE orders SET status=? WHERE id=?";
+    const updateParams = delivery_status ? [delivery_status, id] : [status, id];
+    await pool.query(updateQuery, updateParams);
     return NextResponse.json({ message: "Order updated" });
   } catch (error) {
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });

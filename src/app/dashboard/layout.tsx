@@ -52,7 +52,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-coffee-cream">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} role={userRole} />
-      <div className="lg:ml-64">
+      <div className="transition-all duration-300 lg:ml-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="p-6">{children}</main>
       </div>

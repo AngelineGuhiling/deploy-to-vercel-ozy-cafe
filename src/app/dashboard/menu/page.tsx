@@ -42,18 +42,21 @@ export default function MenuPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Walk-in");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [settings, setSettings] = useState({ shop_name: "", gcash_number: "", gcash_qr: "" });
   const [orderSuccess, setOrderSuccess] = useState("");
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [menuRes, catRes] = await Promise.all([fetch("/api/menu"), fetch("/api/categories")]);
+      const [menuRes, catRes, settingsRes] = await Promise.all([fetch("/api/menu"), fetch("/api/categories"), fetch("/api/settings")]);
       const menuData = await menuRes.json();
       const catData = await catRes.json();
+      const settingsData = await settingsRes.json();
       if (menuData.error) throw new Error(menuData.error);
       setItems(menuData.map((item: MenuItem) => ({ ...item, price: Number(item.price) })));
       setCategories(catData);
+      if (settingsData && settingsData.gcash_number !== undefined) setSettings(settingsData);
     } catch {
       setCategories([
         { id: 1, name: "Espresso", type: "coffee" },
@@ -107,6 +110,11 @@ export default function MenuPage() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+    const soldOut = cart.filter((c) => !items.find((m) => m.id === c.id)?.is_available);
+    if (soldOut.length > 0) {
+      alert(`Can't checkout — sold out: ${soldOut.map((c) => c.name).join(", ")}`);
+      return;
+    }
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -225,7 +233,7 @@ export default function MenuPage() {
         {filteredItems.map((item) => (
           <div key={item.id} className="bg-white rounded-xl shadow-sm border border-coffee-light overflow-hidden flex flex-col">
             <div className="h-36 bg-gradient-to-br from-coffee-secondary to-coffee-accent flex items-center justify-center">
-              {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-5xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
+              {item.image ? <img src={encodeURI(item.image)} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-5xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
             </div>
             <div className="p-4 flex flex-col flex-1">
               <div className="flex justify-between items-start mb-1">
@@ -311,9 +319,7 @@ export default function MenuPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { key: "cash", label: "💵 Cash", desc: "Pay with cash" },
-                    { key: "card", label: "💳 Credit Card", desc: "Visa, Mastercard" },
-                    { key: "debit", label: "🏦 Debit Card", desc: "Direct bank debit" },
-                    { key: "digital", label: "📱 Digital Wallet", desc: "GCash, Maya, etc." },
+                    { key: "gcash", label: "📱 GCash", desc: "Scan QR to pay" },
                   ].map((pm) => (
                     <button key={pm.key} type="button" onClick={() => setPaymentMethod(pm.key)} className={`p-3 rounded-xl border-2 text-left transition ${paymentMethod === pm.key ? "border-coffee-primary bg-coffee-light" : "border-coffee-light hover:border-coffee-secondary"}`}>
                       <div className="font-semibold text-coffee-dark text-sm">{pm.label}</div>
@@ -322,6 +328,22 @@ export default function MenuPage() {
                   ))}
                 </div>
               </div>
+
+              {paymentMethod === "gcash" && (
+                <div className="bg-coffee-cream rounded-xl p-4 text-center">
+                  {settings.gcash_qr ? (
+                    <>
+                      <p className="text-sm font-medium text-coffee-dark mb-3">Scan to pay with GCash</p>
+                      <img src={settings.gcash_qr} alt="GCash QR" className="w-40 h-40 object-contain mx-auto rounded-lg bg-white border border-coffee-light p-2" />
+                      {settings.gcash_number && (
+                        <p className="text-sm text-coffee-primary mt-3">GCash: <span className="font-semibold text-coffee-dark">{settings.gcash_number}</span></p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-coffee-primary/60 py-4">GCash QR not set up yet. Please pay with cash.</p>
+                  )}
+                </div>
+              )}
 
               <div className="bg-coffee-cream rounded-xl p-4">
                 <p className="text-sm font-medium text-coffee-primary mb-2">Order Summary</p>

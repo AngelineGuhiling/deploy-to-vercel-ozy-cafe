@@ -8,12 +8,15 @@ interface Settings {
   shop_phone: string;
   shop_email: string;
   opening_hours: string;
+  gcash_number: string;
+  gcash_qr: string;
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({ shop_name: "", shop_address: "", shop_phone: "", shop_email: "", opening_hours: "" });
+  const [settings, setSettings] = useState<Settings>({ shop_name: "", shop_address: "", shop_phone: "", shop_email: "", opening_hours: "", gcash_number: "", gcash_qr: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => { fetchSettings(); }, []);
@@ -30,9 +33,29 @@ export default function SettingsPage() {
         shop_phone: "+63 912 345 6789",
         shop_email: "info@ozycafe.com",
         opening_hours: "8:00 AM - 10:00 PM",
+        gcash_number: "",
+        gcash_qr: "",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) setSettings((prev) => ({ ...prev, gcash_qr: data.url }));
+      else setMessage("Failed to upload QR code");
+    } catch {
+      setMessage("Failed to upload QR code");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -87,6 +110,32 @@ export default function SettingsPage() {
           <div>
             <label className="block text-sm font-medium text-coffee-dark mb-1">Opening Hours</label>
             <input type="text" value={settings.opening_hours} onChange={(e) => setSettings({ ...settings, opening_hours: e.target.value })} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-coffee-dark mb-1">GCash Number</label>
+            <input type="text" value={settings.gcash_number} onChange={(e) => setSettings({ ...settings, gcash_number: e.target.value })} placeholder="09XX XXX XXXX" className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-coffee-dark mb-2">GCash QR Code</label>
+            <div className="flex items-center gap-4">
+              {settings.gcash_qr ? (
+                <img src={settings.gcash_qr} alt="GCash QR" className="w-28 h-28 object-contain border border-coffee-light rounded-lg bg-white" />
+              ) : (
+                <div className="w-28 h-28 border-2 border-dashed border-coffee-light rounded-lg flex items-center justify-center text-4xl text-coffee-primary/30">📱</div>
+              )}
+              <div className="flex-1">
+                <label className="inline-block bg-coffee-primary text-coffee-cream px-4 py-2 rounded-lg font-semibold hover:bg-coffee-dark transition text-sm cursor-pointer">
+                  {uploading ? "Uploading..." : "Upload QR Code"}
+                  <input type="file" accept="image/*" onChange={handleQrUpload} className="hidden" />
+                </label>
+                {settings.gcash_qr && (
+                  <button type="button" onClick={() => setSettings({ ...settings, gcash_qr: "" })} className="ml-3 text-red-500 text-sm hover:underline">
+                    Remove
+                  </button>
+                )}
+                <p className="text-xs text-coffee-primary/50 mt-2">Customers will see this QR when they choose GCash at checkout.</p>
+              </div>
+            </div>
           </div>
           <button type="submit" disabled={saving} className="w-full bg-coffee-primary text-coffee-cream py-3 rounded-lg font-semibold hover:bg-coffee-dark transition disabled:opacity-50">
             {saving ? "Saving..." : "Save Settings"}

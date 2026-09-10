@@ -8,6 +8,8 @@ interface ShopSettings {
   shop_phone: string;
   shop_email: string;
   opening_hours: string;
+  gcash_number: string;
+  gcash_qr: string;
 }
 
 const defaultSettings: ShopSettings = {
@@ -16,6 +18,8 @@ const defaultSettings: ShopSettings = {
   shop_phone: "+63 912 345 6789",
   shop_email: "info@ozycafe.com",
   opening_hours: "8:00 AM - 10:00 PM",
+  gcash_number: "",
+  gcash_qr: "",
 };
 
 const ShopSettingsContext = createContext<ShopSettings>(defaultSettings);

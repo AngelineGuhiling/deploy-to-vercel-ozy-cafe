@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Hero from "@/components/landing/Hero";
 import MenuPreview from "@/components/landing/MenuPreview";
 import About from "@/components/landing/About";
@@ -17,7 +17,22 @@ interface CartItem {
 }
 
 export default function Home() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const s = localStorage.getItem("ozy_cart");
+        if (s) return JSON.parse(s);
+      }
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ozy_cart", JSON.stringify(cart));
+    } catch {}
+  }, [cart]);
+
   const [showCart, setShowCart] = useState(false);
 
   return (

@@ -7,8 +7,10 @@ function getFirstRow(rows: any) {
   return arr[0] || {};
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const days = parseInt(searchParams.get("days") || "7");
     const [totalOrders] = await pool.query("SELECT COUNT(*) as count FROM orders");
     const [totalRevenue] = await pool.query("SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status='completed'");
     const [totalProducts] = await pool.query("SELECT COUNT(*) as count FROM menu_items");
@@ -36,10 +38,10 @@ export async function GET() {
     const [dailyRevenue] = await pool.query(`
       SELECT DATE(created_at) as date, SUM(total) as revenue, COUNT(*) as orders
       FROM orders
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
       GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `);
+    `, [days]);
 
     const totalOrdersRow = getFirstRow(totalOrders);
     const totalRevenueRow = getFirstRow(totalRevenue);

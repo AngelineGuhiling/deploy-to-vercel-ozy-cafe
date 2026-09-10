@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     let buffer = Buffer.from(bytes);
     let ext = path.extname(file.name).toLowerCase();
-    let name = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    let name = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").replace(/\s+/g, "-");
 
     if (ext === ".avif") {
       const converted = await sharp(buffer).jpeg({ quality: 90 }).toBuffer();

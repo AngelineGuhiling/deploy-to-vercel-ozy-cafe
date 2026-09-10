@@ -14,12 +14,14 @@ const COLORS = ["#6f4e37", "#c4a882", "#d4a574", "#3c2415", "#f5e6d3"];
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState("7");
 
   useEffect(() => { fetchAnalytics(); }, []);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = async (days = dateRange) => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/analytics");
+      const res = await fetch(`/api/analytics?days=${days}`);
       const raw = await res.json();
       setData({
         stats: {
@@ -68,7 +70,16 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-coffee-dark">Analytics</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold text-coffee-dark">Analytics</h2>
+        <div className="flex gap-2">
+          {[{ label: "7 Days", value: "7" }, { label: "30 Days", value: "30" }, { label: "All Time", value: "365" }].map((opt) => (
+            <button key={opt.value} onClick={() => { setDateRange(opt.value); fetchAnalytics(opt.value); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${dateRange === opt.value ? "bg-coffee-primary text-coffee-cream" : "bg-coffee-light text-coffee-primary"}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-coffee-light p-6">

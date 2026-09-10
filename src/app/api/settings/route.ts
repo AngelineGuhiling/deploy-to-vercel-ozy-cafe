@@ -18,11 +18,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
     const body = await request.json();
-    const { shop_name, shop_address, shop_phone, shop_email, opening_hours } = body;
+    const { shop_name, shop_address, shop_phone, shop_email, opening_hours, gcash_number, gcash_qr } = body;
 
     await pool.query(
-      "UPDATE settings SET shop_name=?, shop_address=?, shop_phone=?, shop_email=?, opening_hours=? WHERE id=1",
-      [shop_name, shop_address, shop_phone, shop_email, opening_hours]
+      "UPDATE settings SET shop_name=?, shop_address=?, shop_phone=?, shop_email=?, opening_hours=?, gcash_number=?, gcash_qr=? WHERE id=1",
+      [shop_name, shop_address, shop_phone, shop_email, opening_hours, gcash_number || null, gcash_qr || null]
     );
 
     return NextResponse.json({ message: "Settings updated" });

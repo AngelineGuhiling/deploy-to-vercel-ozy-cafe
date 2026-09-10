@@ -260,7 +260,7 @@ export default function Navbar({ cart, onCartClick }: { cart: CartItem[]; onCart
                   {searchResults.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 bg-coffee-cream rounded-xl p-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-coffee-secondary to-coffee-accent rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
+                        {item.image ? <img src={encodeURI(item.image)} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-coffee-dark text-sm truncate">{item.name}</p>

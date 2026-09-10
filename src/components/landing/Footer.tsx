@@ -30,8 +30,6 @@ export default function Footer() {
             <h4 className="font-semibold mb-4">We Accept</h4>
             <div className="flex flex-wrap gap-3 items-center">
               <img src="/gcash.png" alt="GCash" className="h-8 w-auto" />
-              <img src="/maya.png" alt="Maya" className="h-8 w-auto" />
-              <img src="/credit card.jpg" alt="Credit Card" className="h-8 w-auto" />
               <img src="/cash.jpg" alt="Cash" className="h-8 w-auto" />
             </div>
           </div>

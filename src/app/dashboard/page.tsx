@@ -18,9 +18,18 @@ interface Order {
   staff_name: string;
 }
 
+interface LowStockItem {
+  id: number;
+  item_name: string;
+  quantity: number;
+  unit: string;
+  min_stock: number;
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({ totalOrders: 0, totalRevenue: 0, totalProducts: 0, todayOrders: 0 });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,8 +38,11 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch("/api/analytics");
-      const data = await res.json();
+      const [analyticsRes, inventoryRes] = await Promise.all([
+        fetch("/api/analytics"),
+        fetch("/api/inventory"),
+      ]);
+      const data = await analyticsRes.json();
       setStats({
         totalOrders: Number(data.stats.totalOrders),
         totalRevenue: Number(data.stats.totalRevenue),
@@ -38,6 +50,10 @@ export default function DashboardPage() {
         todayOrders: Number(data.stats.todayOrders),
       });
       setRecentOrders((data.recentOrders?.slice(0, 5) || []).map((o: Order) => ({ ...o, total: Number(o.total) })));
+      if (inventoryRes.ok) {
+        const items = await inventoryRes.json();
+        setLowStock(items.filter((i: LowStockItem) => i.quantity <= i.min_stock));
+      }
     } catch {
       setStats({ totalOrders: 156, totalRevenue: 4523.50, totalProducts: 24, todayOrders: 12 });
       setRecentOrders([
@@ -83,6 +99,22 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+      {lowStock.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">⚠️</span>
+            <h3 className="font-semibold text-red-700">Low Stock Alert ({lowStock.length} items)</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {lowStock.map((item) => (
+              <div key={item.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-red-100">
+                <span className="text-sm text-coffee-dark font-medium">{item.item_name}</span>
+                <span className="text-xs text-red-600 font-semibold">{item.quantity} {item.unit} left</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-xl shadow-sm border border-coffee-light">
         <div className="p-6 border-b border-coffee-light">
           <h3 className="text-lg font-semibold text-coffee-dark">Recent Orders</h3>

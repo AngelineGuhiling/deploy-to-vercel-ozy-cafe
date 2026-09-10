@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useShopSettings } from "@/lib/ShopSettings";
 
 interface MenuItem {
   id: number;
@@ -23,6 +24,7 @@ interface CartItem {
 
 export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { cart: CartItem[]; setCart: React.Dispatch<React.SetStateAction<CartItem[]>>; showCart: boolean; setShowCart: (show: boolean) => void }) {
   const router = useRouter();
+  const settings = useShopSettings();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [activeTab, setActiveTab] = useState<"coffee" | "dessert">("coffee");
   const [coffeeCat, setCoffeeCat] = useState<string>("all");
@@ -33,7 +35,8 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentRef, setPaymentRef] = useState("");
   const [orderType, setOrderType] = useState("dine-in");
-  const [pickupTime, setPickupTime] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<any>(null);
   const [promoError, setPromoError] = useState("");
@@ -41,6 +44,7 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
   const [userId, setUserId] = useState<number | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [detailQty, setDetailQty] = useState(1);
+  const [menuSearch, setMenuSearch] = useState("");
 
   useEffect(() => {
     fetchMenuItems();
@@ -70,25 +74,28 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
       setMenuItems(data.map((item: MenuItem) => ({ ...item, price: Number(item.price) })));
     } catch {
       setMenuItems([
-        { id: 1, name: "Classic Espresso", description: "Rich and bold single shot of pure espresso", price: 3.50, category: "Espresso", type: "coffee", image: null, is_available: true },
-        { id: 2, name: "Double Espresso", description: "Double shot for extra energy", price: 4.50, category: "Espresso", type: "coffee", image: null, is_available: true },
-        { id: 3, name: "Vanilla Latte", description: "Smooth latte with a touch of vanilla", price: 4.50, category: "Latte", type: "coffee", image: null, is_available: true },
-        { id: 4, name: "Caramel Latte", description: "Creamy latte with caramel drizzle", price: 5.00, category: "Latte", type: "coffee", image: null, is_available: true },
-        { id: 5, name: "Cappuccino", description: "Classic Italian cappuccino with frothy milk", price: 4.75, category: "Cappuccino", type: "coffee", image: null, is_available: true },
-        { id: 6, name: "Iced Cold Brew", description: "Smooth 24-hour steeped cold brew", price: 4.00, category: "Cold Brew", type: "coffee", image: null, is_available: true },
-        { id: 7, name: "Caramel Macchiato", description: "Espresso with steamed milk and caramel", price: 5.50, category: "Specialty", type: "coffee", image: null, is_available: true },
-        { id: 8, name: "Mocha Supreme", description: "Chocolate, espresso, and steamed milk", price: 5.75, category: "Specialty", type: "coffee", image: null, is_available: true },
-        { id: 9, name: "Tiramisu Cake", description: "Classic Italian coffee-flavored dessert", price: 6.00, category: "Cakes", type: "dessert", image: null, is_available: true },
-        { id: 10, name: "Cheesecake", description: "Creamy New York style cheesecake", price: 5.50, category: "Cakes", type: "dessert", image: null, is_available: true },
-        { id: 11, name: "Butter Croissant", description: "Freshly baked flaky butter croissant", price: 3.25, category: "Pastries", type: "dessert", image: null, is_available: true },
-        { id: 12, name: "Blueberry Muffin", description: "Soft muffin packed with blueberries", price: 3.00, category: "Pastries", type: "dessert", image: null, is_available: true },
-        { id: 13, name: "Chocolate Chip Cookie", description: "Warm chewy cookie with chocolate chips", price: 2.50, category: "Cookies", type: "dessert", image: null, is_available: true },
-        { id: 14, name: "Oatmeal Raisin Cookie", description: "Healthy oats with sweet raisins", price: 2.50, category: "Cookies", type: "dessert", image: null, is_available: true },
+        { id: 1, name: "Classic Espresso", description: "Rich and bold single shot of pure espresso", price: 56.00, category: "Espresso", type: "coffee", image: "/classic espresso.jpg", is_available: true },
+        { id: 2, name: "Double Espresso", description: "Double shot for extra energy", price: 55.00, category: "Espresso", type: "coffee", image: "/double espresso.jpg", is_available: true },
+        { id: 3, name: "Vanilla Latte", description: "Smooth latte with a touch of vanilla", price: 60.00, category: "Latte", type: "coffee", image: "/vanilla latte.jpg", is_available: true },
+        { id: 4, name: "Caramel Latte", description: "Creamy latte with caramel drizzle", price: 60.00, category: "Latte", type: "coffee", image: "/caramel latte.jpg", is_available: true },
+        { id: 5, name: "Cappuccino", description: "Classic Italian cappuccino with frothy milk", price: 60.00, category: "Cappuccino", type: "coffee", image: "/cappucinno.jpg", is_available: true },
+        { id: 6, name: "Hazelnut Cappuccino", description: "Cappuccino with a warm hazelnut twist", price: 65.00, category: "Cappuccino", type: "coffee", image: "/hazelnut cappuccino.jpg", is_available: true },
+        { id: 7, name: "Iced Cold Brew", description: "Smooth 24-hour steeped cold brew", price: 49.00, category: "Cold Brew", type: "coffee", image: "/ice cold brew.jpg", is_available: true },
+        { id: 8, name: "Vanilla Cold Brew", description: "Cold brew sweetened with vanilla", price: 49.00, category: "Cold Brew", type: "coffee", image: "/vanilla cold brew.jpg", is_available: true },
+        { id: 9, name: "Caramel Macchiato", description: "Espresso with steamed milk and caramel", price: 39.00, category: "Specialty", type: "coffee", image: "/caramel macchiato.jpg", is_available: true },
+        { id: 10, name: "Mocha Supreme", description: "Chocolate, espresso, and steamed milk", price: 70.00, category: "Specialty", type: "coffee", image: "/mocha supreme.jpg", is_available: true },
+        { id: 11, name: "Tiramisu Cake", description: "Classic Italian coffee-flavored dessert", price: 75.00, category: "Cakes", type: "dessert", image: "/Tiramisu cake.jpg", is_available: true },
+        { id: 12, name: "Cheesecake", description: "Creamy New York style cheesecake", price: 54.97, category: "Cakes", type: "dessert", image: "/cheesecake.jpg", is_available: true },
+        { id: 13, name: "Butter Croissant", description: "Freshly baked flaky butter croissant", price: 54.97, category: "Pastries", type: "dessert", image: "/butter croissant.jpg", is_available: true },
+        { id: 14, name: "Blueberry Muffin", description: "Soft muffin packed with blueberries", price: 25.00, category: "Pastries", type: "dessert", image: "/blueberry muffin.jpg", is_available: true },
+        { id: 15, name: "Chocolate Chip Cookie", description: "Warm chewy cookie with chocolate chips", price: 30.00, category: "Cookies", type: "dessert", image: "/chocolate chip cookie.jpg", is_available: true },
+        { id: 16, name: "Oatmeal Raisin Cookie", description: "Healthy oats with sweet raisins", price: 30.00, category: "Cookies", type: "dessert", image: "/oatmeal raisin cookie.jpg", is_available: true },
       ]);
     }
   };
 
   const handleOrder = (item: MenuItem) => {
+    if (!item.is_available) return;
     if (!isLoggedIn) {
       router.push("/login");
       return;
@@ -113,20 +120,27 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+    const soldOut = cart.filter((c) => !menuItems.find((m) => m.id === c.id)?.is_available);
+    if (soldOut.length > 0) {
+      alert(`Can't checkout — sold out: ${soldOut.map((c) => c.name).join(", ")}`);
+      return;
+    }
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name: customerName || "Walk-in",
-          payment_method: paymentMethod,
-          order_type: orderType,
-          pickup_time: pickupTime,
-          created_by: userId,
-          promo_code: promoApplied ? promoApplied.code : null,
-          discount: promoApplied ? Number(promoApplied.discount_amount) : 0,
-          items: cart.map((c) => ({ menu_item_id: c.id, quantity: c.quantity, price: c.price })),
-        }),
+body: JSON.stringify({
+            customer_name: customerName || "Walk-in",
+            payment_method: paymentMethod,
+            order_type: orderType,
+            delivery_address: deliveryAddress,
+            customer_phone: customerPhone,
+            created_by: userId,
+            promo_code: promoApplied ? promoApplied.code : null,
+            discount: promoApplied ? Number(promoApplied.discount_amount) : 0,
+            payment_ref: paymentMethod === "gcash" ? paymentRef : null,
+            items: cart.map((c) => ({ menu_item_id: c.id, quantity: c.quantity, price: c.price })),
+          }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -136,7 +150,8 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
         setPaymentMethod("cash");
         setPaymentRef("");
         setOrderType("dine-in");
-        setPickupTime("");
+        setDeliveryAddress("");
+        setCustomerPhone("");
         setPromoCode("");
         setPromoApplied(null);
         setShowCheckout(false);
@@ -150,9 +165,12 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
 
   const filteredItems = menuItems.filter(item => {
     if (item.type !== activeTab) return false;
-    if (!item.is_available) return false;
     if (activeTab === "coffee" && coffeeCat !== "all" && item.category !== coffeeCat) return false;
     if (activeTab === "dessert" && dessertCat !== "all" && item.category !== dessertCat) return false;
+    if (menuSearch) {
+      const q = menuSearch.toLowerCase();
+      if (!item.name.toLowerCase().includes(q) && !item.description.toLowerCase().includes(q) && !item.category.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -194,6 +212,14 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
           </button>
         </div>
 
+        <div className="max-w-md mx-auto mb-8">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" value={menuSearch} onChange={(e) => setMenuSearch(e.target.value)} placeholder="Search menu..." className="w-full pl-10 pr-4 py-3 rounded-full border border-coffee-light focus:ring-2 focus:ring-coffee-accent outline-none text-sm bg-white shadow-sm" />
+            {menuSearch && <button onClick={() => setMenuSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-coffee-primary/40 hover:text-coffee-dark">✕</button>}
+          </div>
+        </div>
+
         {activeTab === "coffee" && (
           <div className="flex justify-center gap-3 mb-8 flex-wrap">
             {["all", "Espresso", "Cappuccino", "Latte", "Cold Brew", "Specialty"].map((cat) => (
@@ -216,9 +242,14 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredItems.map((item) => (
-            <div key={item.id} onClick={() => { setSelectedItem(item); setDetailQty(1); }} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer">
-              <div className="h-48 bg-gradient-to-br from-coffee-secondary to-coffee-accent flex items-center justify-center">
-                {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-6xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
+            <div key={item.id} onClick={() => { setSelectedItem(item); setDetailQty(1); }} className={`bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer ${!item.is_available ? "opacity-90" : ""}`}>
+              <div className="h-48 bg-gradient-to-br from-coffee-secondary to-coffee-accent flex items-center justify-center relative">
+                {item.image ? <img src={encodeURI(item.image)} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-6xl">{item.type === "coffee" ? "☕" : "🍰"}</span>}
+                {!item.is_available && (
+                  <div className="absolute inset-0 bg-coffee-dark/50 flex items-center justify-center">
+                    <span className="bg-coffee-dark text-coffee-cream text-lg font-bold px-5 py-2 rounded-full uppercase tracking-wide">Sold Out</span>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <div className="flex justify-between items-start mb-2">
@@ -230,8 +261,16 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
                   <span className="inline-block bg-coffee-light text-coffee-primary text-sm px-3 py-1 rounded-full">
                     {item.category}
                   </span>
-                  <button onClick={(e) => { e.stopPropagation(); handleOrder(item); }} className="bg-coffee-primary text-coffee-cream px-4 py-2 rounded-lg font-semibold hover:bg-coffee-dark transition text-sm">
-                    {isLoggedIn ? "Order" : "Sign in to Order"}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleOrder(item); }}
+                    disabled={!item.is_available}
+                    className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${
+                      item.is_available
+                        ? "bg-coffee-primary text-coffee-cream hover:bg-coffee-dark"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {item.is_available ? (isLoggedIn ? "Order" : "Sign in to Order") : "Out of Stock"}
                   </button>
                 </div>
               </div>
@@ -300,9 +339,7 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { key: "cash", label: "💵 Cash", desc: "Pay with cash" },
-                    { key: "card", label: "💳 Credit Card", desc: "Visa, Mastercard" },
-                    { key: "debit", label: "🏦 Debit Card", desc: "Direct bank debit" },
-                    { key: "digital", label: "📱 Digital Wallet", desc: "GCash, Maya, etc." },
+                    { key: "gcash", label: "📱 GCash", desc: "Scan QR to pay" },
                   ].map((pm) => (
                     <button key={pm.key} type="button" onClick={() => setPaymentMethod(pm.key)} className={`p-3 rounded-xl border-2 text-left transition ${paymentMethod === pm.key ? "border-coffee-primary bg-coffee-light" : "border-coffee-light hover:border-coffee-secondary"}`}>
                       <div className="font-semibold text-coffee-dark text-sm">{pm.label}</div>
@@ -312,10 +349,23 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
                 </div>
               </div>
 
-              {paymentMethod !== "cash" && (
-                <div>
-                  <label className="block text-sm font-medium text-coffee-dark mb-1">{paymentMethod === "digital" ? "GCash / Maya Number" : "Card Number"}</label>
-                  <input type="text" value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} placeholder={paymentMethod === "digital" ? "09XX XXX XXXX" : "XXXX XXXX XXXX XXXX"} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" />
+              {paymentMethod === "gcash" && (
+                <div className="bg-coffee-cream rounded-xl p-4 text-center">
+                  {settings.gcash_qr ? (
+                    <>
+                      <p className="text-sm font-medium text-coffee-dark mb-3">Scan to pay with GCash</p>
+                      <img src={settings.gcash_qr} alt="GCash QR" className="w-40 h-40 object-contain mx-auto rounded-lg bg-white border border-coffee-light p-2" />
+                      {settings.gcash_number && (
+                        <p className="text-sm text-coffee-primary mt-3">GCash: <span className="font-semibold text-coffee-dark">{settings.gcash_number}</span></p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-coffee-primary/60 py-4">GCash QR not set up yet. Please pay with cash.</p>
+                  )}
+                  <div className="mt-4 text-left">
+                    <label className="block text-sm font-medium text-coffee-dark mb-1">GCash Reference Number</label>
+                    <input type="text" value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} placeholder="Reference No. (optional)" className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" />
+                  </div>
                 </div>
               )}
 
@@ -334,9 +384,15 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
               </div>
 
               {orderType === "takeout" && (
-                <div>
-                  <label className="block text-sm font-medium text-coffee-dark mb-1">Pickup Time</label>
-                  <input type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-coffee-dark mb-1">Contact Number</label>
+                    <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" placeholder="e.g. 09171234567" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-coffee-dark mb-1">Delivery Address</label>
+                    <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" placeholder="Enter delivery address" />
+                  </div>
                 </div>
               )}
 
@@ -391,14 +447,19 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()} style={{ animation: "slideIn 0.2s ease-out" }}>
             <div className="h-64 bg-gradient-to-br from-coffee-secondary to-coffee-accent flex items-center justify-center relative">
-              {selectedItem.image ? <img src={selectedItem.image} alt={selectedItem.name} className="w-full h-full object-cover" /> : <span className="text-8xl">{selectedItem.type === "coffee" ? "☕" : "🍰"}</span>}
+              {selectedItem.image ? <img src={encodeURI(selectedItem.image)} alt={selectedItem.name} className="w-full h-full object-cover" /> : <span className="text-8xl">{selectedItem.type === "coffee" ? "☕" : "🍰"}</span>}
               <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 bg-black/30 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/50 transition">&times;</button>
             </div>
             <div className="p-6">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-2xl font-bold text-coffee-dark">{selectedItem.name}</h3>
-                  <span className="inline-block bg-coffee-light text-coffee-primary text-sm px-3 py-0.5 rounded-full mt-2">{selectedItem.category}</span>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="inline-block bg-coffee-light text-coffee-primary text-sm px-3 py-0.5 rounded-full">{selectedItem.category}</span>
+                    {!selectedItem.is_available && (
+                      <span className="inline-block bg-red-100 text-red-700 text-sm font-semibold px-3 py-0.5 rounded-full">Sold Out</span>
+                    )}
+                  </div>
                 </div>
                 <span className="text-coffee-accent font-bold text-2xl whitespace-nowrap">₱{Number(selectedItem.price).toFixed(2)}</span>
               </div>
@@ -412,8 +473,16 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
                 </div>
               </div>
               <div className="flex gap-3 mb-6">
-                <button onClick={() => { if (!isLoggedIn) { router.push("/login"); return; } setCart((prev) => { const existing = prev.find((c) => c.id === selectedItem.id); if (existing) { return prev.map((c) => c.id === selectedItem.id ? { ...c, quantity: c.quantity + detailQty } : c); } return [...prev, { id: selectedItem.id, name: selectedItem.name, price: selectedItem.price, quantity: detailQty }]; }); setShowCart(true); setSelectedItem(null); }} className="flex-1 bg-coffee-primary text-coffee-cream py-3 rounded-xl font-semibold hover:bg-coffee-dark transition text-lg">
-                  {isLoggedIn ? "Add to Cart" : "Sign in to Order"}
+                <button
+                  onClick={() => { if (!isLoggedIn) { router.push("/login"); return; } setCart((prev) => { const existing = prev.find((c) => c.id === selectedItem.id); if (existing) { return prev.map((c) => c.id === selectedItem.id ? { ...c, quantity: c.quantity + detailQty } : c); } return [...prev, { id: selectedItem.id, name: selectedItem.name, price: selectedItem.price, quantity: detailQty }]; }); setShowCart(true); setSelectedItem(null); }}
+                  disabled={!selectedItem.is_available}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition text-lg ${
+                    selectedItem.is_available
+                      ? "bg-coffee-primary text-coffee-cream hover:bg-coffee-dark"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {selectedItem.is_available ? (isLoggedIn ? "Add to Cart" : "Sign in to Order") : "Out of Stock"}
                 </button>
                 <button onClick={() => setSelectedItem(null)} className="px-6 py-3 border border-coffee-light rounded-xl hover:bg-coffee-cream transition font-medium">Close</button>
               </div>

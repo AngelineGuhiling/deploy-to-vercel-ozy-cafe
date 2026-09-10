@@ -15,6 +15,7 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [user, setUser] = useState<{ name: string; role: string; avatar: string | null } | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotif, setShowNotif] = useState(false);
+  const [viewNotif, setViewNotif] = useState<Notification | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
                     notifications.map((n) => (
                       <div key={n.id} className={`p-4 border-b border-coffee-light/50 hover:bg-coffee-cream transition flex items-start gap-3 group ${!n.is_read ? "bg-coffee-light/30" : ""}`}>
                         {!n.is_read && <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"></div>}
-                        <div className="flex-1 cursor-pointer" onClick={() => { if (!n.is_read) markRead(n.id); }}>
+                        <div className="flex-1 cursor-pointer" onClick={() => { if (!n.is_read) markRead(n.id); setViewNotif(n); }}>
                           <p className="text-sm text-coffee-dark">{n.message}</p>
                           <p className="text-[10px] text-coffee-primary/40 mt-1">{new Date(n.created_at).toLocaleString()}</p>
                         </div>
@@ -162,6 +163,32 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </Link>
         </div>
       </div>
+
+      {viewNotif && (
+        <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4" onClick={() => setViewNotif(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-bold text-coffee-dark">🔔 Notification</h3>
+              <button onClick={() => setViewNotif(null)} className="text-coffee-primary hover:text-coffee-dark text-2xl leading-none">&times;</button>
+            </div>
+            {viewNotif.order_id && (
+              <span className="inline-block bg-coffee-light text-coffee-primary text-xs font-semibold px-2 py-1 rounded-full mb-3">Order #{viewNotif.order_id}</span>
+            )}
+            <p className="text-coffee-dark">{viewNotif.message}</p>
+            <p className="text-xs text-coffee-primary/40 mt-3">{new Date(viewNotif.created_at).toLocaleString()}</p>
+            <div className="flex gap-3 mt-6">
+              {viewNotif.order_id && (
+                <Link href={`/dashboard/orders?view=${viewNotif.order_id}`} onClick={() => setViewNotif(null)} className="flex-1 bg-coffee-primary text-coffee-cream py-2 rounded-lg text-center font-semibold hover:bg-coffee-dark transition">
+                  View Order
+                </Link>
+              )}
+              <button onClick={() => setViewNotif(null)} className="flex-1 border border-coffee-light rounded-lg py-2 hover:bg-coffee-cream transition font-medium">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

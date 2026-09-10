@@ -49,7 +49,14 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_name VARCHAR(255) DEFAULT 'Walk-in',
   total DECIMAL(10,2) NOT NULL,
   status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
-  payment_method ENUM('cash', 'card', 'debit', 'digital') DEFAULT 'cash',
+  payment_method ENUM('cash', 'gcash', 'card', 'debit', 'digital') DEFAULT 'cash',
+  order_type ENUM('dine-in','takeout') DEFAULT 'dine-in' AFTER payment_method,
+  delivery_address TEXT DEFAULT NULL AFTER order_type,
+  delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending' AFTER delivery_address,
+  driver_lat DECIMAL(10,7) DEFAULT NULL AFTER delivery_status,
+  driver_lng DECIMAL(10,7) DEFAULT NULL AFTER driver_lat,
+  customer_phone VARCHAR(20) DEFAULT NULL AFTER delivery_address,
+  payment_ref VARCHAR(255) DEFAULT NULL AFTER delivery_address,
   created_by INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
@@ -72,6 +79,8 @@ CREATE TABLE IF NOT EXISTS settings (
   shop_phone VARCHAR(20),
   shop_email VARCHAR(255),
   opening_hours VARCHAR(255),
+  gcash_number VARCHAR(20) DEFAULT NULL,
+  gcash_qr VARCHAR(500) DEFAULT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
@@ -90,6 +99,27 @@ INSERT INTO categories (name, type) VALUES
 ('Cookies', 'dessert')
 ON DUPLICATE KEY UPDATE id=id;
 
+INSERT INTO menu_items (name, description, price, category_id, image, is_available)
+SELECT * FROM (
+  SELECT 'Classic Espresso', 'Rich and bold single shot of pure espresso', 56.00, (SELECT id FROM categories WHERE name='Espresso' AND type='coffee'), '/classic espresso.jpg', TRUE
+  UNION ALL SELECT 'Double Espresso', 'Double shot for extra energy', 55.00, (SELECT id FROM categories WHERE name='Espresso' AND type='coffee'), '/double espresso.jpg', TRUE
+  UNION ALL SELECT 'Vanilla Latte', 'Smooth latte with a touch of vanilla', 60.00, (SELECT id FROM categories WHERE name='Latte' AND type='coffee'), '/vanilla latte.jpg', TRUE
+  UNION ALL SELECT 'Caramel Latte', 'Creamy latte with caramel drizzle', 60.00, (SELECT id FROM categories WHERE name='Latte' AND type='coffee'), '/caramel latte.jpg', TRUE
+  UNION ALL SELECT 'Cappuccino', 'Classic Italian cappuccino with frothy milk', 60.00, (SELECT id FROM categories WHERE name='Cappuccino' AND type='coffee'), '/cappucinno.jpg', TRUE
+  UNION ALL SELECT 'Hazelnut Cappuccino', 'Cappuccino with a warm hazelnut twist', 65.00, (SELECT id FROM categories WHERE name='Cappuccino' AND type='coffee'), '/hazelnut cappuccino.jpg', TRUE
+  UNION ALL SELECT 'Iced Cold Brew', 'Smooth 24-hour steeped cold brew', 49.00, (SELECT id FROM categories WHERE name='Cold Brew' AND type='coffee'), '/ice cold brew.jpg', TRUE
+  UNION ALL SELECT 'Vanilla Cold Brew', 'Cold brew sweetened with vanilla', 49.00, (SELECT id FROM categories WHERE name='Cold Brew' AND type='coffee'), '/vanilla cold brew.jpg', TRUE
+  UNION ALL SELECT 'Caramel Macchiato', 'Espresso with steamed milk and caramel', 39.00, (SELECT id FROM categories WHERE name='Specialty' AND type='coffee'), '/caramel macchiato.jpg', TRUE
+  UNION ALL SELECT 'Mocha Supreme', 'Chocolate, espresso, and steamed milk', 70.00, (SELECT id FROM categories WHERE name='Specialty' AND type='coffee'), '/mocha supreme.jpg', TRUE
+  UNION ALL SELECT 'Tiramisu Cake', 'Classic Italian coffee-flavored dessert', 75.00, (SELECT id FROM categories WHERE name='Cakes' AND type='dessert'), '/Tiramisu cake.jpg', TRUE
+  UNION ALL SELECT 'Cheesecake', 'Creamy New York style cheesecake', 54.97, (SELECT id FROM categories WHERE name='Cakes' AND type='dessert'), '/cheesecake.jpg', TRUE
+  UNION ALL SELECT 'Butter Croissant', 'Freshly baked flaky butter croissant', 54.97, (SELECT id FROM categories WHERE name='Pastries' AND type='dessert'), '/butter croissant.jpg', TRUE
+  UNION ALL SELECT 'Blueberry Muffin', 'Soft muffin packed with blueberries', 25.00, (SELECT id FROM categories WHERE name='Pastries' AND type='dessert'), '/blueberry muffin.jpg', TRUE
+  UNION ALL SELECT 'Chocolate Chip Cookie', 'Warm chewy cookie with chocolate chips', 30.00, (SELECT id FROM categories WHERE name='Cookies' AND type='dessert'), '/chocolate chip cookie.jpg', TRUE
+  UNION ALL SELECT 'Oatmeal Raisin Cookie', 'Healthy oats with sweet raisins', 30.00, (SELECT id FROM categories WHERE name='Cookies' AND type='dessert'), '/oatmeal raisin cookie.jpg', TRUE
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM menu_items);
+
 CREATE TABLE IF NOT EXISTS notifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   order_id INT,
@@ -100,7 +130,9 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type ENUM('dine-in','takeout') DEFAULT 'dine-in' AFTER payment_method;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_time VARCHAR(50) DEFAULT NULL AFTER order_type;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT DEFAULT NULL AFTER pickup_time;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_ref VARCHAR(255) DEFAULT NULL AFTER delivery_address;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20) DEFAULT NULL AFTER delivery_address;
 
 CREATE TABLE IF NOT EXISTS reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -161,3 +193,13 @@ CREATE TABLE IF NOT EXISTS attendance (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Migration for existing installs
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS gcash_number VARCHAR(20) DEFAULT NULL AFTER opening_hours;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS gcash_qr VARCHAR(500) DEFAULT NULL AFTER gcash_number;
+ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash', 'gcash', 'card', 'debit', 'digital') DEFAULT 'cash';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending' AFTER delivery_address;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_lat DECIMAL(10,7) DEFAULT NULL AFTER delivery_status;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_lng DECIMAL(10,7) DEFAULT NULL AFTER driver_lat;
+UPDATE orders SET delivery_status = 'ready_for_pickup' WHERE delivery_status = 'confirmed';
+ALTER TABLE orders MODIFY COLUMN delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending';

@@ -18,6 +18,8 @@ export default function UsersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [filterRole, setFilterRole] = useState("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const fetchUsers = async () => {
     try {
@@ -74,6 +76,9 @@ export default function UsersPage() {
     return true;
   });
 
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginatedUsers = filtered.slice((page - 1) * perPage, page * perPage);
+
   const roleCounts = {
     total: users.length,
     admin: users.filter((u) => u.role === "admin").length,
@@ -112,10 +117,10 @@ export default function UsersPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Search by name or email..."
           className="flex-1 px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none text-sm"
         />
@@ -123,7 +128,7 @@ export default function UsersPage() {
           {["all", "admin", "barista", "customer"].map((role) => (
             <button
               key={role}
-              onClick={() => setFilterRole(role)}
+              onClick={() => { setFilterRole(role); setPage(1); }}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
                 filterRole === role
                   ? "bg-coffee-primary text-coffee-cream"
@@ -154,7 +159,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((u) => (
+                {paginatedUsers.map((u) => (
                   <tr key={u.id} className="border-b border-coffee-light hover:bg-coffee-cream/50 transition">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -196,6 +201,18 @@ export default function UsersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-coffee-light">
+            <span className="text-sm text-coffee-primary">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}</span>
+            <div className="flex gap-1">
+              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-3 py-1 text-sm rounded border border-coffee-light disabled:opacity-40 hover:bg-coffee-cream">Prev</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button key={p} onClick={() => setPage(p)} className={`px-3 py-1 text-sm rounded ${page === p ? "bg-coffee-primary text-coffee-cream" : "border border-coffee-light hover:bg-coffee-cream"}`}>{p}</button>
+              ))}
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="px-3 py-1 text-sm rounded border border-coffee-light disabled:opacity-40 hover:bg-coffee-cream">Next</button>
+            </div>
           </div>
         )}
       </div>
