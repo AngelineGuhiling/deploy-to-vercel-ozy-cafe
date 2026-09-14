@@ -50,13 +50,13 @@ CREATE TABLE IF NOT EXISTS orders (
   total DECIMAL(10,2) NOT NULL,
   status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
   payment_method ENUM('cash', 'gcash', 'card', 'debit', 'digital') DEFAULT 'cash',
-  order_type ENUM('dine-in','takeout') DEFAULT 'dine-in' AFTER payment_method,
-  delivery_address TEXT DEFAULT NULL AFTER order_type,
-  delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending' AFTER delivery_address,
-  driver_lat DECIMAL(10,7) DEFAULT NULL AFTER delivery_status,
-  driver_lng DECIMAL(10,7) DEFAULT NULL AFTER driver_lat,
-  customer_phone VARCHAR(20) DEFAULT NULL AFTER delivery_address,
-  payment_ref VARCHAR(255) DEFAULT NULL AFTER delivery_address,
+  order_type ENUM('dine-in','takeout') DEFAULT 'dine-in',
+  delivery_address TEXT DEFAULT NULL,
+  delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending',
+  driver_lat DECIMAL(10,7) DEFAULT NULL,
+  driver_lng DECIMAL(10,7) DEFAULT NULL,
+  customer_phone VARCHAR(20) DEFAULT NULL,
+  payment_ref VARCHAR(255) DEFAULT NULL,
   created_by INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
@@ -129,11 +129,6 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type ENUM('dine-in','takeout') DEFAULT 'dine-in' AFTER payment_method;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT DEFAULT NULL AFTER pickup_time;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_ref VARCHAR(255) DEFAULT NULL AFTER delivery_address;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20) DEFAULT NULL AFTER delivery_address;
-
 CREATE TABLE IF NOT EXISTS reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT NOT NULL,
@@ -193,13 +188,3 @@ CREATE TABLE IF NOT EXISTS attendance (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Migration for existing installs
-ALTER TABLE settings ADD COLUMN IF NOT EXISTS gcash_number VARCHAR(20) DEFAULT NULL AFTER opening_hours;
-ALTER TABLE settings ADD COLUMN IF NOT EXISTS gcash_qr VARCHAR(500) DEFAULT NULL AFTER gcash_number;
-ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash', 'gcash', 'card', 'debit', 'digital') DEFAULT 'cash';
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending' AFTER delivery_address;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_lat DECIMAL(10,7) DEFAULT NULL AFTER delivery_status;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_lng DECIMAL(10,7) DEFAULT NULL AFTER driver_lat;
-UPDATE orders SET delivery_status = 'ready_for_pickup' WHERE delivery_status = 'confirmed';
-ALTER TABLE orders MODIFY COLUMN delivery_status ENUM('pending','preparing','ready_for_pickup','out_for_delivery','delivered') DEFAULT 'pending';

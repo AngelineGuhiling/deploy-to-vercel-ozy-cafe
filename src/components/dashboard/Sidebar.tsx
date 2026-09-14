@@ -8,6 +8,7 @@ const adminItems = [
   { name: "Overview", href: "/dashboard", icon: "📊" },
   { name: "Menu", href: "/dashboard/menu", icon: "📋" },
   { name: "Inventory", href: "/dashboard/inventory", icon: "📦" },
+  { name: "POS", href: "/dashboard/pos", icon: "🖥️" },
   { name: "Orders", href: "/dashboard/orders", icon: "🛒" },
   { name: "Attendance", href: "/dashboard/attendance", icon: "📅" },
   { name: "Reviews", href: "/dashboard/reviews", icon: "⭐" },
@@ -22,6 +23,7 @@ const adminItems = [
 const baristaItems = [
   { name: "Overview", href: "/dashboard", icon: "📊" },
   { name: "Inventory", href: "/dashboard/inventory", icon: "📦" },
+  { name: "POS", href: "/dashboard/pos", icon: "🖥️" },
   { name: "Orders", href: "/dashboard/orders", icon: "🛒" },
   { name: "Attendance", href: "/dashboard/attendance", icon: "📅" },
   { name: "Reviews", href: "/dashboard/reviews", icon: "⭐" },
