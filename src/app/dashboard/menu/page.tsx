@@ -246,13 +246,18 @@ export default function MenuPage() {
                   {item.is_available ? "Available" : "Out of Stock"}
                 </span>
                 <div className="flex-1" />
-                {item.is_available && (
-                  <button onClick={() => addToCart(item)} className="bg-coffee-primary text-coffee-cream text-xs px-3 py-1 rounded-lg hover:bg-coffee-dark transition font-semibold">
-                    + Order
+                <div className="relative group">
+                  <button className="bg-coffee-primary text-coffee-cream text-xs px-3 py-1.5 rounded-lg hover:bg-coffee-dark transition font-semibold">
+                    Actions ▾
                   </button>
-                )}
-                <button onClick={() => openEdit(item)} className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1">Edit</button>
-                <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700 text-xs px-2 py-1">Del</button>
+                  <div className="absolute right-0 bottom-full mb-1 hidden group-hover:block bg-white border border-coffee-light rounded-lg shadow-lg z-20 min-w-[120px]">
+                    {item.is_available && (
+                      <button onClick={() => addToCart(item)} className="w-full text-left text-xs px-3 py-2 hover:bg-coffee-cream text-coffee-dark transition rounded-t-lg">+ Order</button>
+                    )}
+                    <button onClick={() => openEdit(item)} className="w-full text-left text-xs px-3 py-2 hover:bg-coffee-cream text-blue-600 transition">Edit</button>
+                    <button onClick={() => handleDelete(item.id)} className="w-full text-left text-xs px-3 py-2 hover:bg-red-50 text-red-500 transition rounded-b-lg">Delete</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

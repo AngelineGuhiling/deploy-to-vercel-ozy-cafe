@@ -5,7 +5,7 @@ import { hashPassword, generateToken } from "@/lib/auth";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password, role, phone, address } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
@@ -30,15 +30,15 @@ export async function POST(request: Request) {
     const customerRole = "customer";
 
     const [result] = await pool.query(
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-      [name, email, hashedPassword, customerRole]
+      "INSERT INTO users (name, email, password, role, phone, address) VALUES (?, ?, ?, ?, ?, ?)",
+      [name, email, hashedPassword, customerRole, phone || null, address || null]
     );
 
     const userId = (result as { insertId: number }).insertId;
     const token = generateToken({ id: userId, email, role: customerRole });
 
     const response = NextResponse.json({
-      user: { id: userId, name, email, role: customerRole },
+      user: { id: userId, name, email, role: customerRole, phone: phone || null, address: address || null },
     });
 
     response.cookies.set("token", token, {

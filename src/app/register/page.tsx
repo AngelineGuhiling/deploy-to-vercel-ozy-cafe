@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const role = "customer";
@@ -55,7 +57,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, phone, address }),
       });
 
       const data = await res.json();
@@ -95,7 +97,7 @@ export default function RegisterPage() {
         <div className="absolute bottom-10 left-10 w-96 h-96 bg-coffee-secondary rounded-full blur-3xl"></div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative z-10">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg relative z-10">
         <div className="text-center mb-8">
           <Link href="/"><img src="/logo.jpg" alt="Ozy Cafe Logo" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg cursor-pointer hover:opacity-80 transition" /></Link>
           <h1 className="text-3xl font-bold text-coffee-dark">Create Account</h1>
@@ -146,6 +148,43 @@ export default function RegisterPage() {
                 placeholder="you@example.com"
                 className="w-full pl-10 pr-4 py-3 border border-coffee-light rounded-xl focus:ring-2 focus:ring-coffee-accent focus:border-transparent outline-none transition text-coffee-dark placeholder:text-coffee-primary/30"
                 required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-coffee-dark mb-2">Contact Number</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-coffee-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 0917 123 4567"
+                className="w-full pl-10 pr-4 py-3 border border-coffee-light rounded-xl focus:ring-2 focus:ring-coffee-accent focus:border-transparent outline-none transition text-coffee-dark placeholder:text-coffee-primary/30"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-coffee-dark mb-2">Address</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-coffee-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="House no., Street, Barangay, City"
+                className="w-full pl-10 pr-4 py-3 border border-coffee-light rounded-xl focus:ring-2 focus:ring-coffee-accent focus:border-transparent outline-none transition text-coffee-dark placeholder:text-coffee-primary/30"
               />
             </div>
           </div>

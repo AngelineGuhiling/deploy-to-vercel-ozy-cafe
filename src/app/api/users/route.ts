@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     }
 
     const [rows] = await pool.query(
-      "SELECT id, name, email, role, phone, avatar, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, role, phone, address, avatar, created_at FROM users ORDER BY created_at DESC"
     );
     return NextResponse.json(rows);
   } catch (error: unknown) {

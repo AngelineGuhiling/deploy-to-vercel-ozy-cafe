@@ -70,7 +70,6 @@ export default function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Walk-in");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [orderType, setOrderType] = useState("dine-in");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentRef, setPaymentRef] = useState("");
@@ -170,7 +169,6 @@ export default function PosPage() {
     setCart([]);
     setCustomerName("Walk-in");
     setCustomerPhone("");
-    setDeliveryAddress("");
     setOrderType("dine-in");
     setPaymentMethod("cash");
     setPaymentRef("");
@@ -200,7 +198,7 @@ export default function PosPage() {
           customer_name: customerName || "Walk-in",
           payment_method: paymentMethod,
           order_type: orderType,
-          delivery_address: orderType === "takeout" ? deliveryAddress || null : null,
+          delivery_address: null,
           customer_phone: customerPhone || null,
           created_by: userId,
           promo_code: promoApplied ? promoApplied.code : null,
@@ -223,7 +221,7 @@ export default function PosPage() {
         status: "pending",
         payment_method: paymentMethod,
         order_type: orderType,
-        delivery_address: orderType === "takeout" ? deliveryAddress || null : null,
+        delivery_address: null,
         customer_phone: customerPhone || null,
         created_at: new Date().toISOString(),
       };
@@ -368,7 +366,7 @@ export default function PosPage() {
                     <p className="text-sm font-semibold text-coffee-dark line-clamp-1">{item.name}</p>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-coffee-accent font-bold">₱{item.price.toFixed(2)}</span>
-                      <span className="w-7 h-7 rounded-full bg-coffee-primary text-coffee-cream text-sm font-bold flex items-center justify-center">+</span>
+                      
                     </div>
                   </div>
                 </button>
@@ -379,7 +377,7 @@ export default function PosPage() {
       </div>
 
       <div className="lg:w-[380px] lg:shrink-0">
-        <div className="bg-white rounded-2xl border border-coffee-light sticky top-6 max-h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+        <div className="bg-white rounded-2xl border border-coffee-light sticky top-6 max-h-[calc(100vh-6rem)] flex flex-col overflow-y-auto">
           <div className="p-4 border-b border-coffee-light flex items-center justify-between">
             <h2 className="font-bold text-coffee-dark">Current Order</h2>
             <div className="flex items-center gap-2">
@@ -417,18 +415,6 @@ export default function PosPage() {
                 className="w-full px-3 py-2 rounded-lg border border-coffee-light focus:ring-2 focus:ring-coffee-accent outline-none transition text-sm"
               />
             </div>
-            {orderType === "takeout" && (
-              <div>
-                <label className="block text-xs font-medium text-coffee-primary mb-1">Delivery Address</label>
-                <textarea
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="e.g. 123 Coffee Street, Barangay, City"
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-coffee-light focus:ring-2 focus:ring-coffee-accent outline-none transition text-sm resize-none"
-                />
-              </div>
-            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-[160px]">
@@ -481,7 +467,7 @@ export default function PosPage() {
                   <button
                     key={m}
                     onClick={() => setPaymentMethod(m)}
-                    className={`px-2 py-2 rounded-lg text-xs font-medium capitalize transition ${paymentMethod === m ? "bg-coffee-primary text-coffee-cream" : "border border-coffee-light text-coffee-primary hover:bg-coffee-cream"}`}
+                    className={`px-3 py-2.5 rounded-xl text-sm font-semibold capitalize transition ${paymentMethod === m ? "bg-coffee-primary text-coffee-cream shadow-md" : "border border-coffee-light text-coffee-primary hover:bg-coffee-cream"}`}
                   >
                     {m === "cash" ? "💵 Cash" : "📱 GCash"}
                   </button>
@@ -539,7 +525,7 @@ export default function PosPage() {
             <button
               onClick={placeOrder}
               disabled={processing || cart.length === 0}
-              className="w-full bg-coffee-primary text-coffee-cream py-3.5 rounded-xl font-bold text-base hover:bg-coffee-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-coffee-primary text-coffee-cream py-4 rounded-2xl font-extrabold text-lg hover:bg-coffee-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
             >
               {processing ? (
                 <>

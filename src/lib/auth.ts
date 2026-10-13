@@ -32,7 +32,7 @@ export async function getUserFromRequest(request: Request) {
   const decoded = verifyToken(tokenMatch[1]);
   if (!decoded) return null;
 
-  const [rows] = await pool.query("SELECT id, name, email, role, avatar, phone FROM users WHERE id = ?", [decoded.id]);
-  const users = rows as Array<{ id: number; name: string; email: string; role: string; avatar: string | null; phone: string | null }>;
+  const [rows] = await pool.query("SELECT id, name, email, role, avatar, phone, address FROM users WHERE id = ?", [decoded.id]);
+  const users = rows as Array<{ id: number; name: string; email: string; role: string; avatar: string | null; phone: string | null; address: string | null }>;
   return users[0] || null;
 }

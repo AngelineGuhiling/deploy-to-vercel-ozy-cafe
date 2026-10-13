@@ -8,6 +8,7 @@ interface User {
   email: string;
   role: string;
   phone: string | null;
+  address: string | null;
   avatar: string | null;
   created_at: string;
 }
@@ -152,6 +153,7 @@ export default function UsersPage() {
                   <th className="text-left px-4 py-3 font-semibold text-coffee-dark">User</th>
                   <th className="text-left px-4 py-3 font-semibold text-coffee-dark">Role</th>
                   <th className="text-left px-4 py-3 font-semibold text-coffee-dark">Phone</th>
+                  <th className="text-left px-4 py-3 font-semibold text-coffee-dark">Address</th>
                   <th className="text-left px-4 py-3 font-semibold text-coffee-dark">Joined</th>
                   {currentUser?.role === "admin" && (
                     <th className="text-left px-4 py-3 font-semibold text-coffee-dark">Action</th>
@@ -182,6 +184,7 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-coffee-primary">{u.phone || "—"}</td>
+                    <td className="px-4 py-3 text-coffee-primary max-w-[180px] truncate" title={u.address || ""}>{u.address || "—"}</td>
                     <td className="px-4 py-3 text-coffee-primary">
                       {new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </td>

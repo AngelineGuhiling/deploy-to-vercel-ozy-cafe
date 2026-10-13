@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Database not connected. Please import database.sql in phpMyAdmin first." }, { status: 500 });
     }
 
-    const users = rows as Array<{ id: number; name: string; email: string; password: string; role: string; avatar: string | null }>;
+    const users = rows as Array<{ id: number; name: string; email: string; password: string; role: string; avatar: string | null; phone: string | null; address: string | null }>;
 
     if (users.length === 0) {
       return NextResponse.json({ error: "No account found with this email" }, { status: 401 });

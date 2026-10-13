@@ -6,13 +6,14 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  address: string;
   avatar: string;
   role: string;
   created_at?: string;
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserProfile>({ name: "", email: "", phone: "", avatar: "", role: "" });
+  const [user, setUser] = useState<UserProfile>({ name: "", email: "", phone: "", address: "", avatar: "", role: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -300,6 +301,16 @@ export default function ProfilePage() {
                 value={user.phone || ""}
                 onChange={(e) => setUser({ ...user, phone: e.target.value })}
                 placeholder="+63 912 345 6789"
+                className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-coffee-dark mb-1">Address</label>
+              <textarea
+                value={user.address || ""}
+                onChange={(e) => setUser({ ...user, address: e.target.value })}
+                placeholder="House no., Street, Barangay, City"
+                rows={2}
                 className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none"
               />
             </div>

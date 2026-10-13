@@ -23,7 +23,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, phone, avatar } = body;
+    const { name, email, phone, address, avatar } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -38,8 +38,8 @@ export async function PUT(request: Request) {
     }
 
     await pool.query(
-      "UPDATE users SET name=?, email=?, phone=?, avatar=? WHERE id=?",
-      [name, email, phone || null, avatar || null, user.id]
+      "UPDATE users SET name=?, email=?, phone=?, address=?, avatar=? WHERE id=?",
+      [name, email, phone || null, address || null, avatar || null, user.id]
     );
 
     return NextResponse.json({ message: "Profile updated successfully" });

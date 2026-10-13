@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface InventoryItem {
   id: number;
@@ -11,39 +11,37 @@ interface InventoryItem {
   cost_per_unit: number;
 }
 
-interface ProductItem {
-  id: number;
-  name: string;
-  type: string;
-  category: string;
-  price: number;
-  is_available: boolean;
+type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
+
+function getStockStatus(quantity: number, minStock: number): { label: string; badge: string; dot: string } {
+  if (quantity <= 0) {
+    return { label: "Out of Stock", badge: "bg-red-100 text-red-700", dot: "bg-red-500" };
+  }
+  if (quantity <= minStock) {
+    return { label: "Low Stock", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-500" };
+  }
+  return { label: "In Stock", badge: "bg-green-100 text-green-700", dot: "bg-green-500" };
 }
 
 export default function InventoryPage() {
-  const [tab, setTab] = useState<"products" | "ingredients">("products");
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [form, setForm] = useState({ item_name: "", quantity: "", unit: "kg", min_stock: "", cost_per_unit: "" });
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchItems(); }, []);
 
-  const fetchAll = async () => {
+  const fetchItems = async () => {
     try {
-      const [invRes, menuRes] = await Promise.all([fetch("/api/inventory"), fetch("/api/menu")]);
-      const invData = await invRes.json();
-      const menuData = await menuRes.json();
-      setItems(invData.map((item: InventoryItem) => ({
+      const res = await fetch("/api/inventory");
+      const data = await res.json();
+      setItems(data.map((item: InventoryItem) => ({
         ...item,
         quantity: Number(item.quantity),
         min_stock: Number(item.min_stock),
         cost_per_unit: Number(item.cost_per_unit),
       })));
-      setProducts(menuData.map((item: ProductItem) => ({ ...item, price: Number(item.price) })));
     } catch {
       setItems([
         { id: 1, item_name: "Coffee Beans (Arabica)", quantity: 25, unit: "kg", min_stock: 5, cost_per_unit: 800 },
@@ -51,31 +49,8 @@ export default function InventoryPage() {
         { id: 3, item_name: "Sugar", quantity: 15, unit: "kg", min_stock: 3, cost_per_unit: 45 },
         { id: 4, item_name: "Cups (Medium)", quantity: 200, unit: "pcs", min_stock: 50, cost_per_unit: 5 },
       ]);
-      setProducts([
-        { id: 1, name: "Classic Espresso", type: "coffee", category: "Espresso", price: 56.00, is_available: true },
-        { id: 2, name: "Vanilla Latte", type: "coffee", category: "Latte", price: 60.00, is_available: true },
-        { id: 3, name: "Tiramisu Cake", type: "dessert", category: "Cakes", price: 75.00, is_available: true },
-      ]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleProduct = async (product: ProductItem) => {
-    setTogglingId(product.id);
-    try {
-      const res = await fetch("/api/menu", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: product.id, is_available: !product.is_available }),
-      });
-      if (res.ok) {
-        setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, is_available: !p.is_available } : p)));
-      }
-    } catch {
-      alert("Failed to update stock status");
-    } finally {
-      setTogglingId(null);
     }
   };
 
@@ -98,7 +73,7 @@ export default function InventoryPage() {
       setShowModal(false);
       setEditingItem(null);
       setForm({ item_name: "", quantity: "", unit: "kg", min_stock: "", cost_per_unit: "" });
-      fetchAll();
+      fetchItems();
     } catch {
       alert("Failed to save item");
     }
@@ -107,7 +82,7 @@ export default function InventoryPage() {
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this item?")) return;
     await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
-    fetchAll();
+    fetchItems();
   };
 
   const openEdit = (item: InventoryItem) => {
@@ -122,100 +97,78 @@ export default function InventoryPage() {
     setShowModal(true);
   };
 
+  const stockWarning = useMemo(
+    () => items.filter((i) => i.quantity <= i.min_stock || i.quantity <= 0),
+    [items]
+  );
+
   if (loading) return <div className="flex items-center justify-center h-64 text-coffee-primary">Loading...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-coffee-dark">Inventory Management</h2>
-        {tab === "ingredients" && (
-          <button onClick={() => { setEditingItem(null); setForm({ item_name: "", quantity: "", unit: "kg", min_stock: "", cost_per_unit: "" }); setShowModal(true); }} className="bg-coffee-primary text-coffee-cream px-4 py-2 rounded-lg hover:bg-coffee-dark transition">
-            + Add Ingredient
-          </button>
-        )}
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <button onClick={() => setTab("products")} className={`px-5 py-2 rounded-full font-semibold transition ${tab === "products" ? "bg-coffee-primary text-coffee-cream" : "bg-coffee-light text-coffee-primary hover:bg-coffee-secondary"}`}>
-          Menu Products ({products.length})
-        </button>
-        <button onClick={() => setTab("ingredients")} className={`px-5 py-2 rounded-full font-semibold transition ${tab === "ingredients" ? "bg-coffee-primary text-coffee-cream" : "bg-coffee-light text-coffee-primary hover:bg-coffee-secondary"}`}>
-          Ingredients ({items.length})
-        </button>
-      </div>
-
-      {tab === "products" ? (
-        <div className="bg-white rounded-xl shadow-sm border border-coffee-light overflow-hidden">
-          {products.length === 0 ? (
-            <p className="p-6 text-coffee-primary/60 text-sm">No menu products found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-coffee-cream">
-                  <tr>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Product</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Type</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Price</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Stock Status</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-coffee-light">
-                  {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-coffee-cream/50">
-                      <td className="px-6 py-4 text-sm font-medium text-coffee-dark">{p.name}</td>
-                      <td className="px-6 py-4 text-sm text-coffee-primary capitalize">{p.type}</td>
-                      <td className="px-6 py-4 text-sm text-coffee-dark">₱{p.price.toFixed(2)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 text-xs rounded-full ${p.is_available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                          {p.is_available ? "In Stock" : "Out of Stock"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-coffee-primary/70">{p.is_available ? "In Stock" : "Out of Stock"}</span>
-                          <button
-                            type="button"
-                            disabled={togglingId === p.id}
-                            onClick={() => toggleProduct(p)}
-                            className={`w-12 h-6 rounded-full transition relative disabled:opacity-50 ${p.is_available ? "bg-green-500" : "bg-gray-300"}`}
-                            title={p.is_available ? "Click to mark Out of Stock" : "Click to mark In Stock"}
-                          >
-                            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition ${p.is_available ? "left-6" : "left-0.5"}`} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div>
+          <h2 className="text-2xl font-bold text-coffee-dark">Stock & Inventory</h2>
+          <p className="text-sm text-coffee-primary/70 mt-1">
+            Track your ingredients and always know when a stock item will run out.
+          </p>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-coffee-light overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-coffee-cream">
-                <tr>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Item</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Quantity</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Min Stock</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Cost/Unit</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Status</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-coffee-light">
-                {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-coffee-cream/50">
+        <button onClick={() => { setEditingItem(null); setForm({ item_name: "", quantity: "", unit: "kg", min_stock: "", cost_per_unit: "" }); setShowModal(true); }} className="bg-coffee-primary text-coffee-cream px-4 py-2 rounded-lg hover:bg-coffee-dark transition">
+          + Add Ingredient
+        </button>
+      </div>
+
+      {stockWarning.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">⚠️</span>
+            <h3 className="font-semibold text-orange-700">Running out soon ({stockWarning.length} item{stockWarning.length > 1 ? "s" : ""})</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {stockWarning.map((item) => {
+              const status = getStockStatus(item.quantity, item.min_stock);
+              return (
+                <div key={item.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-orange-100">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status.dot}`} />
+                    <span className="text-sm text-coffee-dark font-medium truncate">{item.item_name}</span>
+                  </div>
+                  <span className={`text-xs font-semibold ${item.quantity <= 0 ? "text-red-600" : "text-orange-600"}`}>
+                    {item.quantity} {item.unit} left
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm border border-coffee-light overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-coffee-cream">
+              <tr>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Item</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Quantity</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Min Stock</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Cost/Unit</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Status</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-coffee-primary">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-coffee-light">
+              {items.map((item) => {
+                const status = getStockStatus(item.quantity, item.min_stock);
+                return (
+                  <tr key={item.id} className={`hover:bg-coffee-cream/50 ${item.quantity <= 0 ? "bg-red-50/40" : ""}`}>
                     <td className="px-6 py-4 text-sm font-medium text-coffee-dark">{item.item_name}</td>
                     <td className="px-6 py-4 text-sm text-coffee-dark">{item.quantity} {item.unit}</td>
                     <td className="px-6 py-4 text-sm text-coffee-primary">{item.min_stock} {item.unit}</td>
                     <td className="px-6 py-4 text-sm text-coffee-dark">₱{item.cost_per_unit.toFixed(2)}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full ${item.quantity <= item.min_stock ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                        {item.quantity <= item.min_stock ? "Low Stock" : "In Stock"}
+                      <span className={`px-2 py-1 text-xs rounded-full inline-flex items-center gap-1.5 ${status.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                        {status.label}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -225,12 +178,12 @@ export default function InventoryPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

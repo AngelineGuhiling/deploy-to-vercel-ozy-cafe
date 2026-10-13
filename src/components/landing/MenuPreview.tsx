@@ -59,6 +59,8 @@ export default function MenuPreview({ cart, setCart, showCart, setShowCart }: { 
         setIsLoggedIn(true);
         setUserId(data.id);
         setCustomerName(data.name);
+        setCustomerPhone(data.phone || "");
+        setDeliveryAddress(data.address || "");
       }
     } catch {
       setIsLoggedIn(false);
@@ -384,15 +386,12 @@ body: JSON.stringify({
               </div>
 
               {orderType === "takeout" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-coffee-dark mb-1">Contact Number</label>
-                    <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" placeholder="e.g. 09171234567" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-coffee-dark mb-1">Delivery Address</label>
-                    <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="w-full px-4 py-2 border border-coffee-light rounded-lg focus:ring-2 focus:ring-coffee-accent outline-none" placeholder="Enter delivery address" />
-                  </div>
+                <div className="bg-coffee-cream rounded-xl p-4 space-y-2 text-sm">
+                  <p className="font-medium text-coffee-dark">📞 {customerPhone || "No contact number on file"}</p>
+                  <p className="text-coffee-primary/70 flex gap-1.5 leading-relaxed">
+                    <span>📍</span>
+                    <span>{deliveryAddress || "No address on file — update it in your profile"}</span>
+                  </p>
                 </div>
               )}
 
