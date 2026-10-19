@@ -159,6 +159,8 @@ body: JSON.stringify({
         setShowCheckout(false);
         setShowCart(false);
         setTimeout(() => setOrderSuccess(""), 4000);
+      } else {
+        alert(data.error || "Failed to place order");
       }
     } catch {
       alert("Failed to place order");

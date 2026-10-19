@@ -109,6 +109,13 @@ export default function OrdersPage() {
     : s === "pending" ? "bg-yellow-100 text-yellow-700"
     : "bg-gray-100 text-gray-700";
 
+  const statusBadge = (s: string) =>
+    s === "reserved" ? "bg-blue-100 text-blue-700"
+    : s === "served" ? "bg-green-100 text-green-700"
+    : s === "completed" ? "bg-green-100 text-green-700"
+    : s === "pending" ? "bg-yellow-100 text-yellow-700"
+    : "bg-red-100 text-red-700";
+
   const filteredOrders = orders.filter((o) => {
     if (filter !== "all" && o.status !== filter) return false;
     if (search) {
@@ -134,8 +141,8 @@ export default function OrdersPage() {
         <h2 className="text-2xl font-bold text-coffee-dark">Customer Orders</h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search orders..." className="px-4 py-2 border border-coffee-light rounded-lg text-sm focus:ring-2 focus:ring-coffee-accent outline-none w-full sm:w-56" />
-          <div className="flex gap-2">
-            {["all", "pending", "completed", "cancelled"].map((f) => (
+          <div className="flex gap-2 flex-wrap">
+            {["all", "reserved", "served", "pending", "completed", "cancelled"].map((f) => (
               <button key={f} onClick={() => { setFilter(f); setPage(1); }} className={`px-4 py-2 rounded-full text-sm font-medium transition capitalize ${filter === f ? "bg-coffee-primary text-coffee-cream" : "bg-coffee-light text-coffee-primary"}`}>
                 {f}
               </button>
@@ -183,7 +190,7 @@ export default function OrdersPage() {
                       )}
                     </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${order.status === "completed" ? "bg-green-100 text-green-700" : order.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                    <span className={`px-2 py-1 text-xs rounded-full capitalize ${statusBadge(order.status)}`}>
                       {order.status}
                     </span>
                   </td>
@@ -197,9 +204,12 @@ export default function OrdersPage() {
                   <td className="px-6 py-4">
                     <div className="flex gap-1">
                       <button onClick={() => openReceipt(order.id)} disabled={receiptLoading} className="text-coffee-accent hover:text-coffee-dark text-xs px-2 py-1 rounded bg-coffee-cream border border-coffee-light disabled:opacity-50">Receipt</button>
-                      {order.status === "pending" && (
+                      {(order.status === "reserved" || order.status === "pending") && (
                         <>
-                          <button onClick={() => updateStatus(order.id, "completed")} className="text-green-500 hover:text-green-700 text-xs px-2 py-1 rounded bg-green-50">Complete</button>
+                          <button onClick={() => updateStatus(order.id, "served")} className="text-green-500 hover:text-green-700 text-xs px-2 py-1 rounded bg-green-50">Mark Served</button>
+                          {order.status === "pending" && (
+                            <button onClick={() => updateStatus(order.id, "completed")} className="text-green-500 hover:text-green-700 text-xs px-2 py-1 rounded bg-green-50">Complete</button>
+                          )}
                           <button onClick={() => updateStatus(order.id, "cancelled")} className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50">Cancel</button>
                         </>
                       )}

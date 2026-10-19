@@ -77,6 +77,20 @@ export default function OrdersPage() {
     return idx === -1 ? 0 : idx;
   };
 
+  const statusBadge = (s: string) =>
+    s === "reserved" ? "bg-blue-100 text-blue-700"
+    : s === "served" ? "bg-green-100 text-green-700"
+    : s === "completed" ? "bg-green-100 text-green-700"
+    : s === "pending" ? "bg-yellow-100 text-yellow-700"
+    : "bg-red-100 text-red-700";
+
+  const statusNote = (s: string) =>
+    s === "reserved" ? "✅ Your order is reserved — we're preparing it now."
+    : s === "served" ? "🎉 Order served — enjoy!"
+    : s === "completed" ? "Order completed. Thank you!"
+    : s === "pending" ? "Your order is being prepared."
+    : "This order was cancelled.";
+
   if (loading) return <div className="min-h-screen bg-coffee-cream flex items-center justify-center"><p className="text-coffee-primary">Loading...</p></div>;
 
   return (
@@ -109,7 +123,7 @@ export default function OrdersPage() {
                     <p className="text-sm text-coffee-primary/60">{new Date(order.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${order.status === "completed" ? "bg-green-100 text-green-700" : order.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                    <span className={`px-3 py-1 text-xs rounded-full font-medium capitalize ${statusBadge(order.status)}`}>
                       {order.status}
                     </span>
                     {order.order_type === "takeout" && (
@@ -118,6 +132,9 @@ export default function OrdersPage() {
                   </div>
                 </div>
                 <p className="text-sm text-coffee-dark mb-2">{order.items}</p>
+                <p className={`text-xs font-medium mb-2 ${order.status === "cancelled" ? "text-red-500" : order.status === "served" || order.status === "completed" ? "text-green-600" : "text-blue-600"}`}>
+                  {statusNote(order.status)}
+                </p>
                 {(order.delivery_address || order.customer_phone) && (
                   <p className="text-xs text-coffee-primary/70 mb-2">
                     {order.customer_phone && <>📞 {order.customer_phone}{order.delivery_address ? " · " : ""}</>}

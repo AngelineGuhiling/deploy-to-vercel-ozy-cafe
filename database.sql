@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   customer_name VARCHAR(255) DEFAULT 'Walk-in',
   total DECIMAL(10,2) NOT NULL,
-  status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
+  status ENUM('reserved', 'pending', 'served', 'completed', 'cancelled') DEFAULT 'reserved',
   payment_method ENUM('cash', 'gcash', 'card', 'debit', 'digital') DEFAULT 'cash',
   order_type ENUM('dine-in','takeout') DEFAULT 'dine-in',
   delivery_address TEXT DEFAULT NULL,
@@ -71,6 +71,17 @@ CREATE TABLE IF NOT EXISTS order_items (
   price DECIMAL(10,2) NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS menu_recipes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  menu_item_id INT NOT NULL,
+  inventory_item_id INT NOT NULL,
+  quantity_per_serving DECIMAL(10,3) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_menu_ingredient (menu_item_id, inventory_item_id),
+  FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE,
+  FOREIGN KEY (inventory_item_id) REFERENCES inventory(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS settings (

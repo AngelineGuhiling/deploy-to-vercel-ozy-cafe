@@ -27,6 +27,19 @@ interface CartItem {
   quantity: number;
 }
 
+interface InventoryItem {
+  id: number;
+  item_name: string;
+  unit: string;
+  quantity: number;
+}
+
+interface RecipeRow {
+  menu_item_id: number;
+  inventory_item_id: number;
+  quantity_per_serving: number;
+}
+
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,18 +58,28 @@ export default function MenuPage() {
   const [settings, setSettings] = useState({ shop_name: "", gcash_number: "", gcash_qr: "" });
   const [orderSuccess, setOrderSuccess] = useState("");
 
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [recipes, setRecipes] = useState<RecipeRow[]>([]);
+  const [recipeItem, setRecipeItem] = useState<MenuItem | null>(null);
+  const [recipeRows, setRecipeRows] = useState<{ inventory_item_id: string; quantity_per_serving: string }[]>([]);
+  const [recipeSaving, setRecipeSaving] = useState(false);
+
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [menuRes, catRes, settingsRes] = await Promise.all([fetch("/api/menu"), fetch("/api/categories"), fetch("/api/settings")]);
+      const [menuRes, catRes, settingsRes, invRes, recRes] = await Promise.all([fetch("/api/menu"), fetch("/api/categories"), fetch("/api/settings"), fetch("/api/inventory"), fetch("/api/recipes")]);
       const menuData = await menuRes.json();
       const catData = await catRes.json();
       const settingsData = await settingsRes.json();
+      const invData = await invRes.json();
+      const recData = await recRes.json();
       if (menuData.error) throw new Error(menuData.error);
       setItems(menuData.map((item: MenuItem) => ({ ...item, price: Number(item.price) })));
       setCategories(catData);
       if (settingsData && settingsData.gcash_number !== undefined) setSettings(settingsData);
+      if (Array.isArray(invData)) setInventory(invData);
+      if (Array.isArray(recData)) setRecipes(recData.map((r: RecipeRow) => ({ ...r, quantity_per_serving: Number(r.quantity_per_serving) })));
     } catch {
       setCategories([
         { id: 1, name: "Espresso", type: "coffee" },
@@ -134,6 +157,8 @@ export default function MenuPage() {
         setShowCheckout(false);
         setShowCart(false);
         setTimeout(() => setOrderSuccess(""), 4000);
+      } else {
+        alert(data.error || "Failed to place order");
       }
     } catch {
       alert("Failed to place order");
@@ -191,6 +216,48 @@ export default function MenuPage() {
     setEditingItem(item);
     setForm({ name: item.name, description: item.description || "", price: item.price.toString(), category_id: item.category_id?.toString() || "", image: item.image || "" });
     setShowAddModal(true);
+  };
+
+  const openRecipe = (item: MenuItem) => {
+    setRecipeItem(item);
+    setRecipeRows(
+      recipes
+        .filter((r) => r.menu_item_id === item.id)
+        .map((r) => ({
+          inventory_item_id: String(r.inventory_item_id),
+          quantity_per_serving: String(r.quantity_per_serving),
+        }))
+    );
+  };
+
+  const recipeCount = (menuItemId: number) => recipes.filter((r) => r.menu_item_id === menuItemId).length;
+
+  const saveRecipe = async () => {
+    if (!recipeItem) return;
+    setRecipeSaving(true);
+    try {
+      const res = await fetch("/api/recipes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          menu_item_id: recipeItem.id,
+          recipes: recipeRows
+            .filter((r) => r.inventory_item_id && Number(r.quantity_per_serving) > 0)
+            .map((r) => ({ inventory_item_id: Number(r.inventory_item_id), quantity_per_serving: Number(r.quantity_per_serving) })),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const name = recipeItem.name;
+      setRecipeItem(null);
+      setRecipeRows([]);
+      fetchData();
+      setOrderSuccess(`Ingredients saved for ${name}`);
+      setTimeout(() => setOrderSuccess(""), 3000);
+    } catch {
+      alert("Failed to save ingredients");
+    } finally {
+      setRecipeSaving(false);
+    }
   };
 
   const filteredItems = items.filter((item) => {
@@ -255,6 +322,7 @@ export default function MenuPage() {
                       <button onClick={() => addToCart(item)} className="w-full text-left text-xs px-3 py-2 hover:bg-coffee-cream text-coffee-dark transition rounded-t-lg">+ Order</button>
                     )}
                     <button onClick={() => openEdit(item)} className="w-full text-left text-xs px-3 py-2 hover:bg-coffee-cream text-blue-600 transition">Edit</button>
+                    <button onClick={() => openRecipe(item)} className="w-full text-left text-xs px-3 py-2 hover:bg-coffee-cream text-coffee-dark transition">Ingredients{recipeCount(item.id) > 0 ? ` (${recipeCount(item.id)})` : ""}</button>
                     <button onClick={() => handleDelete(item.id)} className="w-full text-left text-xs px-3 py-2 hover:bg-red-50 text-red-500 transition rounded-b-lg">Delete</button>
                   </div>
                 </div>
@@ -443,6 +511,60 @@ export default function MenuPage() {
                 <button type="button" onClick={() => { setShowAddModal(false); setEditingItem(null); }} className="px-4 py-2 border border-coffee-light rounded-lg hover:bg-coffee-cream transition">Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {recipeItem && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-coffee-dark mb-1">🧪 Ingredients — {recipeItem.name}</h3>
+            <p className="text-xs text-coffee-primary mb-4">Ingredients deducted from inventory per serving each time this item is ordered.</p>
+
+            {recipeRows.length === 0 ? (
+              <p className="text-sm text-coffee-primary/60 py-4">No ingredients linked yet. Add at least one to track stock usage.</p>
+            ) : (
+              <div className="space-y-2 mb-3">
+                {recipeRows.map((row, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <select
+                      value={row.inventory_item_id}
+                      onChange={(e) => setRecipeRows(recipeRows.map((r, j) => j === i ? { ...r, inventory_item_id: e.target.value } : r))}
+                      className="flex-1 px-3 py-2 border border-coffee-light rounded-lg text-sm focus:ring-2 focus:ring-coffee-accent outline-none"
+                    >
+                      <option value="">Select ingredient</option>
+                      {inventory.map((inv) => (
+                        <option key={inv.id} value={inv.id}>{inv.item_name} ({inv.quantity} {inv.unit} in stock)</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      value={row.quantity_per_serving}
+                      onChange={(e) => setRecipeRows(recipeRows.map((r, j) => j === i ? { ...r, quantity_per_serving: e.target.value } : r))}
+                      placeholder="Qty"
+                      className="w-24 px-3 py-2 border border-coffee-light rounded-lg text-sm focus:ring-2 focus:ring-coffee-accent outline-none"
+                    />
+                    <button onClick={() => setRecipeRows(recipeRows.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 text-sm px-2">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setRecipeRows([...recipeRows, { inventory_item_id: "", quantity_per_serving: "" }])}
+              className="text-sm text-coffee-accent hover:text-coffee-dark font-semibold mb-4"
+            >
+              + Add ingredient
+            </button>
+
+            <div className="flex gap-3 mt-2">
+              <button onClick={saveRecipe} disabled={recipeSaving} className="flex-1 bg-coffee-primary text-coffee-cream py-2 rounded-lg hover:bg-coffee-dark transition disabled:opacity-50">
+                {recipeSaving ? "Saving..." : "Save Ingredients"}
+              </button>
+              <button onClick={() => { setRecipeItem(null); setRecipeRows([]); }} className="px-4 py-2 border border-coffee-light rounded-lg hover:bg-coffee-cream transition">Cancel</button>
+            </div>
           </div>
         </div>
       )}

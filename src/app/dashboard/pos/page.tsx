@@ -102,7 +102,7 @@ export default function PosPage() {
   const fetchOrders = () => {
     fetch("/api/orders")
       .then((r) => r.json())
-      .then((data: Order[]) => setOrders(data.filter((o) => o.status === "pending") as Order[]))
+      .then((data: Order[]) => setOrders(data.filter((o) => o.status === "reserved" || o.status === "pending") as Order[]))
       .catch(() => {});
   };
 
@@ -218,7 +218,7 @@ export default function PosPage() {
         id: orderId,
         customer_name: customerName || "Walk-in",
         total,
-        status: "pending",
+        status: "reserved",
         payment_method: paymentMethod,
         order_type: orderType,
         delivery_address: null,
@@ -547,12 +547,12 @@ export default function PosPage() {
       <div className="bg-white rounded-2xl border border-coffee-light p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-coffee-dark text-lg">🛵 Active Orders &amp; Tracking</h2>
-          <span className="text-xs text-coffee-primary">{orders.length} pending</span>
+          <span className="text-xs text-coffee-primary">{orders.length} active</span>
         </div>
         {orders.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-3xl mb-2">📭</p>
-            <p className="text-sm text-coffee-primary/60">No pending orders.</p>
+            <p className="text-sm text-coffee-primary/60">No active orders.</p>
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -560,7 +560,7 @@ export default function PosPage() {
               <div key={order.id} className="rounded-xl border border-coffee-light p-4 bg-coffee-cream/50">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-coffee-dark">Order #{order.id}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{order.status}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full capitalize ${order.status === "reserved" ? "bg-blue-100 text-blue-700" : order.status === "served" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{order.status}</span>
                 </div>
                 <p className="text-xs text-coffee-primary">👤 {order.customer_name}{order.customer_phone ? ` · 📞 ${order.customer_phone}` : ""}</p>
                 {order.order_type === "takeout" && (
@@ -591,8 +591,15 @@ export default function PosPage() {
                     </>
                   )}
                   <button onClick={() => openReceipt(order.id)} className="text-[11px] px-2 py-1 rounded bg-coffee-cream text-coffee-accent border border-coffee-light">🧾 Receipt</button>
-                  <button onClick={() => updateOrderStatus(order.id, "completed")} className="text-[11px] px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100">✔ Complete</button>
-                  <button onClick={() => updateOrderStatus(order.id, "cancelled")} className="text-[11px] px-2 py-1 rounded bg-red-50 text-red-500 hover:bg-red-100">✕ Cancel</button>
+                  {(order.status === "reserved" || order.status === "pending") && (
+                    <>
+                      <button onClick={() => updateOrderStatus(order.id, "served")} className="text-[11px] px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100">✔ Mark Served</button>
+                      {order.status === "pending" && (
+                        <button onClick={() => updateOrderStatus(order.id, "completed")} className="text-[11px] px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100">✔ Complete</button>
+                      )}
+                      <button onClick={() => updateOrderStatus(order.id, "cancelled")} className="text-[11px] px-2 py-1 rounded bg-red-50 text-red-500 hover:bg-red-100">✕ Cancel</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
